@@ -36,7 +36,7 @@ import java.util.Set;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	
 	// /aep/**为AEP平台接口
-	private static final Set<String> EXCLUDED_PREFIX_PATHS = Set.of("/aep/", "/user/register");
+	private static final Set<String> EXCLUDED_PREFIX_PATHS = Set.of("/aep/", "/rbac/user/register");
 	private static final String TOKEN_HEADER = Constants.TOKEN_HEADER;
 	private static final String TOKEN_PREFIX = Constants.TOKEN_PREFIX;
 	// TODO: WebSocket握手时从query参数获取token

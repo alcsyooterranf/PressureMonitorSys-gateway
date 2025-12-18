@@ -1,10 +1,10 @@
 package org.pms.domain.auth.dto;
 
 import com.alibaba.fastjson.annotation.JSONField;
-import com.pms.auth.model.UserAggregate;
 import lombok.Builder;
 import lombok.Data;
 import org.apache.commons.lang3.ObjectUtils;
+import org.pms.api.dto.UserAggregate;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;

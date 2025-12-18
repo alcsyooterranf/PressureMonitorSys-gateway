@@ -89,16 +89,16 @@
             <artifactId>feign-okhttp</artifactId>
         </dependency>
 
-        <!-- business-api模块 - 从本地Maven仓库引用 -->
-        <dependency>
-            <groupId>org.pms</groupId>
-            <artifactId>business-api</artifactId>
-        </dependency>
-
         <!-- 工程模块 - 只保留trigger模块（包含Feign客户端） -->
         <dependency>
             <groupId>org.pms</groupId>
             <artifactId>gateway-trigger</artifactId>
+        </dependency>
+
+        <!-- business-api模块 - 从本地Maven仓库引用 -->
+        <dependency>
+            <groupId>org.pms</groupId>
+            <artifactId>business-api</artifactId>
         </dependency>
     </dependencies>
 

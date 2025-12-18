@@ -47,23 +47,14 @@
             <artifactId>gateway-domain</artifactId>
         </dependency>
 
-        <!-- Common模块 - 从本地Maven仓库引用 -->
-        <dependency>
-            <groupId>com.pms</groupId>
-            <artifactId>common-auth</artifactId>
-        </dependency>
-
-        <!-- business-api模块 - 从本地Maven仓库引用 -->
+        <!-- 微服务内部模块 - 从本地Maven仓库引用 -->
         <dependency>
             <groupId>org.pms</groupId>
             <artifactId>business-api</artifactId>
         </dependency>
-
-        <!-- auth-api -->
         <dependency>
             <groupId>org.pms</groupId>
             <artifactId>auth-api</artifactId>
-            <version>1.0.1</version>
         </dependency>
     </dependencies>
 

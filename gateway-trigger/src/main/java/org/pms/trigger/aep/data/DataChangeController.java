@@ -1,11 +1,11 @@
 package org.pms.trigger.aep.data;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.pms.types.ResponseCode;
 import lombok.extern.slf4j.Slf4j;
-import org.pms.api.common.HttpResponse;
 import org.pms.domain.dataReport.dto.BaseDataChangeReportDTO;
 import org.pms.trigger.buffer.DeviceDataBuffer;
+import org.pms.types.GatewayCode;
+import org.pms.types.Response;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -34,14 +34,14 @@ public class DataChangeController {
 	}
 	
 	@RequestMapping(value = "aep/data_change", method = RequestMethod.POST)
-	public HttpResponse<String> deviceDataChange(@RequestBody @Valid BaseDataChangeReportDTO request) {
+	public Response<String> deviceDataChange(@RequestBody @Valid BaseDataChangeReportDTO request) {
 		String protocol = request.getProtocol();
 		// 1. 检查协议类型
 		if (!LEGAL_PROTOCOL.contains(protocol)) {
 			log.error("不支持的协议类型: {}, 目前支持的协议有: {}", protocol, LEGAL_PROTOCOL);
-			return HttpResponse.<String>builder()
-					.code(ResponseCode.PROTOCOL_NOT_SUPPORTED.getCode())
-					.message(ResponseCode.PROTOCOL_NOT_SUPPORTED.getMessage())
+			return Response.<String>builder()
+					.code(GatewayCode.PROTOCOL_NOT_SUPPORTED.getCode())
+					.message(GatewayCode.PROTOCOL_NOT_SUPPORTED.getMessage())
 					.build();
 		}
 		
@@ -49,18 +49,18 @@ public class DataChangeController {
 		JsonNode payload = request.getPayload();
 		if (Objects.isNull(payload)) {
 			log.error("上报数据内容为空: {}", request);
-			return HttpResponse.<String>builder()
-					.code(ResponseCode.DATA_REPORT_PAYLOAD_EMPTY.getCode())
-					.message(ResponseCode.DATA_REPORT_PAYLOAD_EMPTY.getMessage())
+			return Response.<String>builder()
+					.code(GatewayCode.DATA_REPORT_PAYLOAD_EMPTY.getCode())
+					.message(GatewayCode.DATA_REPORT_PAYLOAD_EMPTY.getMessage())
 					.build();
 		}
 		// 透传模式(payload为Base64编码的二进制数据)
 		// TODO: 暂不支持, 以后可拓展
 		if (payload.isTextual()) {
 			log.error("暂不支持透传模式");
-			return HttpResponse.<String>builder()
-					.code(ResponseCode.DATA_REPORT_PARSE_ERROR.getCode())
-					.message(ResponseCode.DATA_REPORT_PARSE_ERROR.getMessage())
+			return Response.<String>builder()
+					.code(GatewayCode.DATA_REPORT_PARSE_ERROR.getCode())
+					.message(GatewayCode.DATA_REPORT_PARSE_ERROR.getMessage())
 					.build();
 		}
 		log.info("aep/data_change收到消息: deviceId={}, serviceId={}",
@@ -77,15 +77,15 @@ public class DataChangeController {
 		
 		if (!success) {
 			log.error("设备数据队列已满，数据被拒绝: deviceId={}", request.getDeviceId());
-			return HttpResponse.<String>builder()
-					.code(ResponseCode.LOCAL_QUEUE_IS_FULL.getCode())
-					.message(ResponseCode.LOCAL_QUEUE_IS_FULL.getMessage())
+			return Response.<String>builder()
+					.code(GatewayCode.LOCAL_QUEUE_IS_FULL.getCode())
+					.message(GatewayCode.LOCAL_QUEUE_IS_FULL.getMessage())
 					.build();
 		}
 		
-		return HttpResponse.<String>builder()
-				.code(ResponseCode.SUCCESS.getCode())
-				.message(ResponseCode.SUCCESS.getMessage())
+		return Response.<String>builder()
+				.code(GatewayCode.SUCCESS.getCode())
+				.message(GatewayCode.SUCCESS.getMessage())
 				.data("接受设备数据(" + request.getServiceId() + ")上报")
 				.build();
 	}

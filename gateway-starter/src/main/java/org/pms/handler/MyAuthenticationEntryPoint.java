@@ -1,9 +1,9 @@
 package org.pms.handler;
 
-import com.pms.types.ResponseCode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.pms.types.GatewayCode;
 import org.pms.utils.HttpResponseUtil;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
@@ -27,7 +27,7 @@ public class MyAuthenticationEntryPoint implements AuthenticationEntryPoint {
 	@Override
 	public void commence(HttpServletRequest request, HttpServletResponse response,
 						 AuthenticationException authException) throws IOException {
-		HttpResponseUtil.assembleResponse(response, ResponseCode.AUTHENTICATION_FAILURE);
+		HttpResponseUtil.assembleResponse(response, GatewayCode.AUTHENTICATION_FAILURE);
 	}
 	
 }

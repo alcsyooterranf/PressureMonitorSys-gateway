@@ -69,10 +69,15 @@
             <groupId>org.pms</groupId>
             <artifactId>business-api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.pms</groupId>
+            <artifactId>auth-api</artifactId>
+        </dependency>
 
+        <!-- 内部模块 -->
         <dependency>
             <groupId>com.pms</groupId>
-            <artifactId>common-auth</artifactId>
+            <artifactId>common-types</artifactId>
         </dependency>
     </dependencies>
 

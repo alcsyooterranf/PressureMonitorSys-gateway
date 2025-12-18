@@ -1,8 +1,6 @@
 package org.pms.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pms.types.Constants;
-import com.pms.types.ResponseCode;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -12,6 +10,8 @@ import org.jetbrains.annotations.NotNull;
 import org.pms.domain.auth.dto.LoginUser;
 import org.pms.filter.req.CustomHttpServletRequest;
 import org.pms.filter.req.SecurityContextHeader;
+import org.pms.types.GatewayCode;
+import org.pms.types.GatewayConstants;
 import org.pms.utils.HttpResponseUtil;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -34,7 +34,7 @@ import java.util.Base64;
 @Component
 public class RequestForwardEncapsulationFilter extends OncePerRequestFilter {
 	
-	private static final String SECURITY_CONTEXT_HEADER = Constants.SECURITY_CONTEXT_HEADER;
+	private static final String SECURITY_CONTEXT_HEADER = GatewayConstants.SECURITY_CONTEXT_HEADER;
 	// 用户上下文透传Header（新增）
 	private static final String USER_ID_HEADER = "X-User-Id";
 	private static final String USER_NAME_HEADER = "X-User-Name";
@@ -49,7 +49,7 @@ public class RequestForwardEncapsulationFilter extends OncePerRequestFilter {
 			try {
 				filterChain.doFilter(request, response);
 			} catch (ServletException e) {
-				HttpResponseUtil.assembleResponse(response, ResponseCode.REQUEST_FORWARD_IO_EXCEPTION);
+				HttpResponseUtil.assembleResponse(response, GatewayCode.REQUEST_FORWARD_IO_EXCEPTION);
 			}
 		} else {
 			LoginUser loginUser = (LoginUser) authentication.getPrincipal();
@@ -66,7 +66,7 @@ public class RequestForwardEncapsulationFilter extends OncePerRequestFilter {
 			try {
 				encodedSecurityContext = toJsonBase64(securityContextHeader);
 			} catch (IOException e) {
-				HttpResponseUtil.assembleResponse(response, ResponseCode.REQUEST_BASE64_DECODE_ERROR);
+				HttpResponseUtil.assembleResponse(response, GatewayCode.REQUEST_BASE64_DECODE_ERROR);
 			}
 			
 			// 添加到请求头（保留原有的X-Security-Context，用于兼容）
@@ -90,7 +90,7 @@ public class RequestForwardEncapsulationFilter extends OncePerRequestFilter {
 			try {
 				filterChain.doFilter(customRequest, response);
 			} catch (ServletException e) {
-				HttpResponseUtil.assembleResponse(response, ResponseCode.REQUEST_FORWARD_IO_EXCEPTION);
+				HttpResponseUtil.assembleResponse(response, GatewayCode.REQUEST_FORWARD_IO_EXCEPTION);
 			}
 		}
 	}

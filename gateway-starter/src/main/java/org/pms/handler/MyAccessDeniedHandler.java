@@ -1,9 +1,9 @@
 package org.pms.handler;
 
-import com.pms.types.ResponseCode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.pms.types.GatewayCode;
 import org.pms.utils.HttpResponseUtil;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.web.access.AccessDeniedHandler;
@@ -26,7 +26,7 @@ public class MyAccessDeniedHandler implements AccessDeniedHandler {
 	public void handle(HttpServletRequest request, HttpServletResponse response,
 					   AccessDeniedException accessDeniedException) throws IOException {
 		log.error("权限不足 {}", request.getRequestURI());
-		HttpResponseUtil.assembleResponse(response, ResponseCode.AUTHORIZATION_FAILURE);
+		HttpResponseUtil.assembleResponse(response, GatewayCode.AUTHORIZATION_FAILURE);
 	}
 	
 }

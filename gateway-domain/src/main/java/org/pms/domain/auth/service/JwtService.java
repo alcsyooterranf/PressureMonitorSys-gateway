@@ -1,11 +1,11 @@
 package org.pms.domain.auth.service;
 
-import com.pms.auth.model.UserAggregate;
-import com.pms.auth.utils.JwtUtil;
-import com.pms.types.Constants;
 import io.jsonwebtoken.Claims;
 import lombok.extern.slf4j.Slf4j;
+import org.pms.api.dto.UserAggregate;
+import org.pms.api.utils.JwtUtil;
 import org.pms.domain.auth.dto.LoginUser;
+import org.pms.types.GatewayConstants;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
 
@@ -23,9 +23,9 @@ import java.util.List;
 @Service
 public class JwtService {
 	
-	private static final String USER_ID = Constants.USER_ID;
-	private static final String USER_NAME = Constants.USER_NAME;
-	private static final String AUTHORITIES = Constants.AUTHORITIES;
+	private static final String USER_ID = GatewayConstants.USER_ID;
+	private static final String USER_NAME = GatewayConstants.USER_NAME;
+	private static final String AUTHORITIES = GatewayConstants.AUTHORITIES;
 	
 	/**
 	 * 初始化公钥

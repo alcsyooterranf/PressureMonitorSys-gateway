@@ -1,9 +1,9 @@
 package org.pms.trigger.feign;
 
-import org.pms.api.common.RpcResponse;
 import org.pms.api.dto.command.CommandResponseDTO;
 import org.pms.api.dto.devicedata.DeviceDataDTO;
 import org.pms.api.facade.IDeviceDataFacade;
+import org.pms.types.Response;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -24,8 +24,8 @@ import java.util.List;
  * @date 2025-01-23
  */
 @FeignClient(
-		name = "backend-device-service",
-		url = "${backend.service.url}",
+		name = "business-device-service",
+		url = "${rpc.business.url}",
 		configuration = FeignConfig.class
 )
 public interface IDeviceClient extends IDeviceDataFacade {
@@ -38,7 +38,7 @@ public interface IDeviceClient extends IDeviceDataFacade {
 	 */
 	@Override
 	@PostMapping("/api/device/data/batch-save")
-	RpcResponse<Boolean> batchSaveDeviceData(@RequestBody List<DeviceDataDTO> dataList);
+	Response<Boolean> batchSaveDeviceData(@RequestBody List<DeviceDataDTO> dataList);
 	
 	/**
 	 * 批量保存指令响应
@@ -48,7 +48,7 @@ public interface IDeviceClient extends IDeviceDataFacade {
 	 */
 	@Override
 	@PostMapping("/api/device/command/batch-save")
-	RpcResponse<Boolean> batchSaveCommandResponse(@RequestBody List<CommandResponseDTO> commandList);
+	Response<Boolean> batchSaveCommandResponse(@RequestBody List<CommandResponseDTO> commandList);
 	
 	/**
 	 * 单条保存设备数据（用于重试）
@@ -58,7 +58,7 @@ public interface IDeviceClient extends IDeviceDataFacade {
 	 */
 	@Override
 	@PostMapping("/api/device/data/save")
-	RpcResponse<Boolean> saveDeviceData(@RequestBody DeviceDataDTO data);
+	Response<Boolean> saveDeviceData(@RequestBody DeviceDataDTO data);
 	
 	/**
 	 * 单条保存指令响应（用于重试）
@@ -68,7 +68,7 @@ public interface IDeviceClient extends IDeviceDataFacade {
 	 */
 	@Override
 	@PostMapping("/api/device/command/save")
-	RpcResponse<Boolean> saveCommandResponse(@RequestBody CommandResponseDTO commandResponse);
+	Response<Boolean> saveCommandResponse(@RequestBody CommandResponseDTO commandResponse);
 	
 }
 

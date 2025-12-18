@@ -80,7 +80,7 @@ public class DomainToApiConverter {
 		
 		return CommandResponseDTO.builder()
 				.deviceId(domain.getDeviceId())
-				.productId(domain.getProductId())
+				.pipelineId(domain.getProductId())
 				.taskId(domain.getTaskId())
 				.commandResult(
 						domain.getResult() != null

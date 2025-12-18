@@ -1,9 +1,5 @@
 package org.pms.filter;
 
-import com.pms.auth.utils.JwtUtil;
-import com.pms.types.AppException;
-import com.pms.types.Constants;
-import com.pms.types.ResponseCode;
 import jakarta.annotation.Resource;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -12,8 +8,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.pms.api.utils.JwtUtil;
 import org.pms.domain.auth.dto.LoginUser;
 import org.pms.domain.auth.service.JwtService;
+import org.pms.types.GatewayCode;
+import org.pms.types.GatewayConstants;
 import org.pms.utils.HttpResponseUtil;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -37,8 +36,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	
 	// /aep/**为AEP平台接口
 	private static final Set<String> EXCLUDED_PREFIX_PATHS = Set.of("/aep/", "/rbac/user/register");
-	private static final String TOKEN_HEADER = Constants.TOKEN_HEADER;
-	private static final String TOKEN_PREFIX = Constants.TOKEN_PREFIX;
+	private static final String TOKEN_HEADER = GatewayConstants.TOKEN_HEADER;
+	private static final String TOKEN_PREFIX = GatewayConstants.TOKEN_PREFIX;
 	// TODO: WebSocket握手时从query参数获取token
 	private static final String TOKEN_QUERY_PARAM = "token";
 	
@@ -63,15 +62,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 		
 		// 2. 验证token是否存在
 		if (StringUtils.isBlank(token)) {
-			HttpResponseUtil.assembleResponse(response, ResponseCode.AUTHORIZATION_HEADER_EMPTY);
+			HttpResponseUtil.assembleResponse(response, GatewayCode.AUTHORIZATION_HEADER_EMPTY);
 			return;
 		}
 		
 		// 3. 验证token基本信息（Gateway只验证签名和过期时间，不验证refreshToken存在性）
 		try {
 			JwtUtil.validateToken(token);
-		} catch (AppException e) {
-			HttpResponseUtil.assembleResponse(response, ResponseCode.TOKEN_VALIDATE_ERROR);
+		} catch (RuntimeException e) {
+			HttpResponseUtil.assembleResponse(response, GatewayCode.TOKEN_VALIDATE_ERROR);
 			return;
 		}
 		log.info("JWT Filter: token验证通过");

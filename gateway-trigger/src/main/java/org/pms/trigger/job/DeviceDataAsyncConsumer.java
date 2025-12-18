@@ -2,7 +2,6 @@ package org.pms.trigger.job;
 
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.pms.api.common.RpcResponse;
 import org.pms.api.dto.command.CommandResponseDTO;
 import org.pms.api.dto.devicedata.DeviceDataDTO;
 import org.pms.domain.command.dto.BaseCommandResponseDTO;
@@ -12,6 +11,7 @@ import org.pms.trigger.buffer.DeviceBufferConfig;
 import org.pms.trigger.converter.DomainToApiConverter;
 import org.pms.trigger.feign.ICommandClient;
 import org.pms.trigger.feign.IDeviceClient;
+import org.pms.types.Response;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -87,9 +87,9 @@ public class DeviceDataAsyncConsumer {
 			
 			// 3. 批量调用后端RPC接口
 			try {
-				RpcResponse<Boolean> rpcResponse = IDeviceClient.batchSaveDeviceData(apiBatch);
+				Response<Boolean> rpcResponse = IDeviceClient.batchSaveDeviceData(apiBatch);
 				
-				if (rpcResponse == null || !"0000".equals(rpcResponse.getCode())) {
+				if (!rpcResponse.getData()) {
 					log.error("批量保存设备数据失败: {}", rpcResponse != null ? rpcResponse.getMessage() : "响应为空");
 					// 失败的数据放入重试队列
 					deviceDataBuffer.offerBatchToRetryData(domainBatch);
@@ -151,9 +151,9 @@ public class DeviceDataAsyncConsumer {
 						continue;
 					}
 					
-					RpcResponse<Boolean> rpcResponse = IDeviceClient.saveDeviceData(apiData);
+					Response<Boolean> rpcResponse = IDeviceClient.saveDeviceData(apiData);
 					
-					if (rpcResponse != null && "0000".equals(rpcResponse.getCode())) {
+					if (!rpcResponse.getData()) {
 						log.info("设备数据重试成功: deviceId={}, retryCount={}", deviceId, retryCount + 1);
 						retryCountMap.remove(deviceId);
 					} else {
@@ -206,9 +206,9 @@ public class DeviceDataAsyncConsumer {
 			
 			// 3. 批量调用后端RPC接口
 			try {
-				RpcResponse<Boolean> rpcResponse = IDeviceClient.batchSaveCommandResponse(apiBatch);
+				Response<Boolean> rpcResponse = IDeviceClient.batchSaveCommandResponse(apiBatch);
 				
-				if (rpcResponse == null || !"0000".equals(rpcResponse.getCode())) {
+				if (!rpcResponse.getData()) {
 					log.error("批量保存指令响应失败: {}", rpcResponse != null ? rpcResponse.getMessage() : "响应为空");
 					// 失败的数据放入重试队列
 					deviceDataBuffer.offerBatchToRetryCommand(domainBatch);
@@ -271,9 +271,9 @@ public class DeviceDataAsyncConsumer {
 						continue;
 					}
 					
-					RpcResponse<Boolean> rpcResponse = IDeviceClient.saveCommandResponse(apiCommand);
+					Response<Boolean> rpcResponse = IDeviceClient.saveCommandResponse(apiCommand);
 					
-					if (rpcResponse != null && "0000".equals(rpcResponse.getCode())) {
+					if (!rpcResponse.getData()) {
 						log.info("指令响应重试成功: deviceId={}, taskId={}, retryCount={}",
 								domainCommand.getDeviceId(), domainCommand.getTaskId(), retryCount + 1);
 						retryCountMap.remove(key);

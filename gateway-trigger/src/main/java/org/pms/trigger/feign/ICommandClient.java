@@ -1,7 +1,7 @@
 package org.pms.trigger.feign;
 
-import org.pms.api.common.HttpResponse;
 import org.pms.domain.command.dto.BaseCommandResponseDTO;
+import org.pms.types.Response;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -13,8 +13,8 @@ import java.util.List;
  * @description 后端指令服务Feign客户端, 用于网关调用后端服务的指令响应处理接口
  */
 @FeignClient(
-		name = "backend-command-service",
-		url = "${backend.service.url}",
+		name = "business-command-service",
+		url = "${rpc.business.url}",
 		path = "/api/command"
 )
 public interface ICommandClient {
@@ -26,7 +26,7 @@ public interface ICommandClient {
 	 * @return 响应结果
 	 */
 	@PostMapping("/response/save")
-	HttpResponse<Void> saveCommandResponse(@RequestBody BaseCommandResponseDTO request);
+	Response<Void> saveCommandResponse(@RequestBody BaseCommandResponseDTO request);
 	
 	/**
 	 * 批量保存指令响应
@@ -35,7 +35,7 @@ public interface ICommandClient {
 	 * @return 响应结果
 	 */
 	@PostMapping("/response/batch-save")
-	HttpResponse<Void> batchSaveCommandResponse(@RequestBody List<BaseCommandResponseDTO> responseList);
+	Response<Void> batchSaveCommandResponse(@RequestBody List<BaseCommandResponseDTO> responseList);
 	
 }
 

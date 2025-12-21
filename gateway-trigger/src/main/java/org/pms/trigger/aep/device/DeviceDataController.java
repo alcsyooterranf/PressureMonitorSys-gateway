@@ -1,9 +1,9 @@
-package org.pms.trigger.aep.data;
+package org.pms.trigger.aep.device;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
-import org.pms.domain.dataReport.dto.BaseDataChangeReportDTO;
-import org.pms.trigger.buffer.DeviceDataBuffer;
+import org.pms.domain.devicedata.dto.BaseDeviceDataDTO;
+import org.pms.trigger.buffer.DataBuffer;
 import org.pms.types.GatewayCode;
 import org.pms.types.Response;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -24,17 +24,17 @@ import java.util.Objects;
  */
 @Slf4j
 @RestController
-public class DataChangeController {
+public class DeviceDataController {
 	
 	private final static List<String> LEGAL_PROTOCOL = List.of("mqtt");
-	private final DeviceDataBuffer deviceDataBuffer;
+	private final DataBuffer dataBuffer;
 	
-	public DataChangeController(DeviceDataBuffer deviceDataBuffer) {
-		this.deviceDataBuffer = deviceDataBuffer;
+	public DeviceDataController(DataBuffer dataBuffer) {
+		this.dataBuffer = dataBuffer;
 	}
 	
 	@RequestMapping(value = "aep/data_change", method = RequestMethod.POST)
-	public Response<String> deviceDataChange(@RequestBody @Valid BaseDataChangeReportDTO request) {
+	public Response<String> deviceDataChange(@RequestBody @Valid BaseDeviceDataDTO request) {
 		String protocol = request.getProtocol();
 		// 1. 检查协议类型
 		if (!LEGAL_PROTOCOL.contains(protocol)) {
@@ -70,10 +70,10 @@ public class DataChangeController {
 		long start = System.currentTimeMillis();
 		
 		// 放入本地队列(快速返回，不等待后端处理)
-		boolean success = deviceDataBuffer.offerData(request);
+		boolean success = dataBuffer.offerData(request);
 		
 		long end = System.currentTimeMillis();
-		log.info("数据入队耗时: {}ms, 队列大小: {}", end - start, deviceDataBuffer.getDataQueueSize());
+		log.info("数据入队耗时: {}ms, 队列大小: {}", end - start, dataBuffer.getDataQueueSize());
 		
 		if (!success) {
 			log.error("设备数据队列已满，数据被拒绝: deviceId={}", request.getDeviceId());

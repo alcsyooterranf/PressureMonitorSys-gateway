@@ -1,6 +1,7 @@
 package org.pms.trigger.feign;
 
-import org.pms.domain.command.dto.BaseCommandResponseDTO;
+import org.pms.api.dto.command.CommandRespDTO;
+import org.pms.api.facade.ICommandFacade;
 import org.pms.types.Response;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,7 +18,7 @@ import java.util.List;
 		url = "${rpc.business.url}",
 		path = "/api/command"
 )
-public interface ICommandClient {
+public interface ICommandClient extends ICommandFacade {
 	
 	/**
 	 * 单条保存指令响应
@@ -25,8 +26,8 @@ public interface ICommandClient {
 	 * @param request 指令响应DTO
 	 * @return 响应结果
 	 */
-	@PostMapping("/response/save")
-	Response<Void> saveCommandResponse(@RequestBody BaseCommandResponseDTO request);
+	@PostMapping("/api/device/command/save")
+	Response<Boolean> handleCommandResp(@RequestBody CommandRespDTO request);
 	
 	/**
 	 * 批量保存指令响应
@@ -34,8 +35,8 @@ public interface ICommandClient {
 	 * @param responseList 指令响应列表
 	 * @return 响应结果
 	 */
-	@PostMapping("/response/batch-save")
-	Response<Void> batchSaveCommandResponse(@RequestBody List<BaseCommandResponseDTO> responseList);
+	@PostMapping("/api/device/command/batch-save")
+	Response<Boolean> batchHandleCommandResp(@RequestBody List<CommandRespDTO> responseList);
 	
 }
 

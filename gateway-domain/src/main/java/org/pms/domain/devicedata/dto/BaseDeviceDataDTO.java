@@ -1,4 +1,4 @@
-package org.pms.domain.dataReport.dto;
+package org.pms.domain.devicedata.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class BaseDataChangeReportDTO {
+public class BaseDeviceDataDTO {
 	
 	/**
 	 * (可选)上行报文序号, Tlink协议特有字段

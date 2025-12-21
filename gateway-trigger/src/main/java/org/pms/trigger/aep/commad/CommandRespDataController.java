@@ -1,8 +1,8 @@
 package org.pms.trigger.aep.commad;
 
 import lombok.extern.slf4j.Slf4j;
-import org.pms.domain.command.dto.BaseCommandResponseDTO;
-import org.pms.trigger.buffer.DeviceDataBuffer;
+import org.pms.domain.command.dto.BaseCommandRespDataDTO;
+import org.pms.trigger.buffer.DataBuffer;
 import org.pms.types.GatewayCode;
 import org.pms.types.Response;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -21,16 +21,16 @@ import javax.validation.Valid;
  */
 @Slf4j
 @RestController
-public class CommandResponseController {
+public class CommandRespDataController {
 	
-	private final DeviceDataBuffer deviceDataBuffer;
+	private final DataBuffer dataBuffer;
 	
-	public CommandResponseController(DeviceDataBuffer deviceDataBuffer) {
-		this.deviceDataBuffer = deviceDataBuffer;
+	public CommandRespDataController(DataBuffer dataBuffer) {
+		this.dataBuffer = dataBuffer;
 	}
 	
 	@RequestMapping(value = "aep/command", method = RequestMethod.POST)
-	public Response<String> deviceCommandResponse(@RequestBody @Valid BaseCommandResponseDTO request) {
+	public Response<String> deviceCommandResponse(@RequestBody @Valid BaseCommandRespDataDTO request) {
 		log.info("aep/command收到消息: deviceId={}, taskId={}, status={}",
 				request.getDeviceId(),
 				request.getTaskId(),
@@ -40,19 +40,18 @@ public class CommandResponseController {
 		long start = System.currentTimeMillis();
 		
 		// 放入本地队列（快速返回，不等待后端处理）
-		boolean success = deviceDataBuffer.offerCommand(request);
+		boolean success = dataBuffer.offerCommand(request);
 		
 		long end = System.currentTimeMillis();
 		log.info("指令响应入队耗时: {}ms, 队列大小: {}",
-				end - start, deviceDataBuffer.getCommandQueueSize());
+				end - start, dataBuffer.getCommandQueueSize());
 		
 		if (!success) {
 			log.error("指令响应队列已满，数据被拒绝: deviceId={}, taskId={}",
 					request.getDeviceId(), request.getTaskId());
 			return Response.<String>builder()
-					.code(GatewayCode.UN_ERROR.getCode())
-					.message("系统繁忙，请稍后重试")
-					.data("队列已满")
+					.code(GatewayCode.LOCAL_QUEUE_IS_FULL.getCode())
+					.message(GatewayCode.LOCAL_QUEUE_IS_FULL.getMessage())
 					.build();
 		}
 		

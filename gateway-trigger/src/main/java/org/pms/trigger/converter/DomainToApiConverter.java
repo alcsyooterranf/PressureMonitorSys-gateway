@@ -2,12 +2,12 @@ package org.pms.trigger.converter;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
-import org.pms.api.dto.command.CommandResponseDTO;
-import org.pms.api.dto.command.CommandState;
+import org.apache.commons.lang3.StringUtils;
+import org.pms.api.dto.command.CommandRespDTO;
 import org.pms.api.dto.devicedata.DeviceDataDTO;
 import org.pms.api.dto.devicedata.MonitorParameterDTO;
-import org.pms.domain.command.dto.BaseCommandResponseDTO;
-import org.pms.domain.dataReport.dto.BaseDataChangeReportDTO;
+import org.pms.domain.command.dto.BaseCommandRespDataDTO;
+import org.pms.domain.devicedata.dto.BaseDeviceDataDTO;
 import org.springframework.stereotype.Component;
 
 /**
@@ -35,7 +35,7 @@ public class DomainToApiConverter {
 	 * @param domain Domain层DTO（AEP消息）
 	 * @return API层DTO（RPC传输）
 	 */
-	public DeviceDataDTO convertDeviceData(BaseDataChangeReportDTO domain) {
+	public DeviceDataDTO convertDeviceData(BaseDeviceDataDTO domain) {
 		if (domain == null) {
 			return null;
 		}
@@ -73,14 +73,14 @@ public class DomainToApiConverter {
 	 * @param domain Domain层DTO（AEP消息）
 	 * @return API层DTO（RPC传输）
 	 */
-	public CommandResponseDTO convertCommandResponse(BaseCommandResponseDTO domain) {
+	public CommandRespDTO convertCommandResponse(BaseCommandRespDataDTO domain) {
 		if (domain == null) {
 			return null;
 		}
 		
-		return CommandResponseDTO.builder()
-				.deviceId(domain.getDeviceId())
-				.pipelineId(domain.getProductId())
+		return CommandRespDTO.builder()
+				.deviceSN(domain.getDeviceId())
+				.pipelineSN(domain.getProductId())
 				.taskId(domain.getTaskId())
 				.commandResult(
 						domain.getResult() != null
@@ -88,8 +88,8 @@ public class DomainToApiConverter {
 								: null)
 				.commandState(
 						domain.getResult() != null
-								? CommandState.valueOf(domain.getResult().getResultCode())
-								: CommandState.UNKNOW_ERROR)
+								? domain.getResult().getResultCode()
+								: StringUtils.EMPTY)
 				.timestamp(domain.getTimestamp())
 				.tenantId(domain.getTenantId())
 				.build();

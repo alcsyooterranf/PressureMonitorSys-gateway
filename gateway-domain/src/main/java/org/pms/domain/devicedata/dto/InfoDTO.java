@@ -1,4 +1,4 @@
-package org.pms.domain.dataReport.dto;
+package org.pms.domain.devicedata.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;

@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class BaseCommandResponseDTO {
+public class BaseCommandRespDataDTO {
 	
 	/**
 	 * 时间戳

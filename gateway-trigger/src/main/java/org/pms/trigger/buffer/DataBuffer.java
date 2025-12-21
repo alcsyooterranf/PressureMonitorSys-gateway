@@ -4,8 +4,8 @@ import jakarta.annotation.Resource;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.pms.domain.command.dto.BaseCommandResponseDTO;
-import org.pms.domain.dataReport.dto.BaseDataChangeReportDTO;
+import org.pms.domain.command.dto.BaseCommandRespDataDTO;
+import org.pms.domain.devicedata.dto.BaseDeviceDataDTO;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -30,34 +30,34 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 @Slf4j
 @Component
-public class DeviceDataBuffer {
+public class DataBuffer {
 	
 	@Resource
-	private DeviceBufferConfig config;
+	private DataBufferConfig config;
 	
 	/**
 	 * 设备数据队列
 	 * 容量可配置，默认10000
 	 */
-	private volatile BlockingQueue<BaseDataChangeReportDTO> dataQueue;
+	private volatile BlockingQueue<BaseDeviceDataDTO> dataQueue;
 	
 	/**
 	 * 指令响应队列
 	 * 容量可配置，默认5000
 	 */
-	private BlockingQueue<BaseCommandResponseDTO> commandQueue;
+	private BlockingQueue<BaseCommandRespDataDTO> commandQueue;
 	
 	/**
 	 * 设备数据重试队列
 	 * 容量可配置，默认5000
 	 */
-	private BlockingQueue<BaseDataChangeReportDTO> retryDataQueue;
+	private BlockingQueue<BaseDeviceDataDTO> retryDataQueue;
 	
 	/**
 	 * 指令响应重试队列
 	 * 容量可配置，默认2000
 	 */
-	private BlockingQueue<BaseCommandResponseDTO> retryCommandQueue;
+	private BlockingQueue<BaseCommandRespDataDTO> retryCommandQueue;
 	
 	/**
 	 * 初始化队列（延迟初始化，等待配置注入）
@@ -88,7 +88,7 @@ public class DeviceDataBuffer {
 	 * @param data 设备数据
 	 * @return true-成功, false-队列已满
 	 */
-	public boolean offerData(BaseDataChangeReportDTO data) {
+	public boolean offerData(BaseDeviceDataDTO data) {
 		initQueuesIfNeeded();
 		boolean success = dataQueue.offer(data);
 		if (!success) {
@@ -107,9 +107,9 @@ public class DeviceDataBuffer {
 	 * @param maxSize 最大取出数量
 	 * @return 设备数据列表
 	 */
-	public List<BaseDataChangeReportDTO> drainDataBatch(int maxSize) {
+	public List<BaseDeviceDataDTO> drainDataBatch(int maxSize) {
 		initQueuesIfNeeded();
-		List<BaseDataChangeReportDTO> batch = new ArrayList<>(maxSize);
+		List<BaseDeviceDataDTO> batch = new ArrayList<>(maxSize);
 		dataQueue.drainTo(batch, maxSize);
 		return batch;
 	}
@@ -156,7 +156,7 @@ public class DeviceDataBuffer {
 	 * @param command 指令响应
 	 * @return true-成功, false-队列已满
 	 */
-	public boolean offerCommand(BaseCommandResponseDTO command) {
+	public boolean offerCommand(BaseCommandRespDataDTO command) {
 		initQueuesIfNeeded();
 		boolean success = commandQueue.offer(command);
 		if (!success) {
@@ -175,9 +175,9 @@ public class DeviceDataBuffer {
 	 * @param maxSize 最大取出数量
 	 * @return 指令响应列表
 	 */
-	public List<BaseCommandResponseDTO> drainCommandBatch(int maxSize) {
+	public List<BaseCommandRespDataDTO> drainCommandBatch(int maxSize) {
 		initQueuesIfNeeded();
-		List<BaseCommandResponseDTO> batch = new ArrayList<>(maxSize);
+		List<BaseCommandRespDataDTO> batch = new ArrayList<>(maxSize);
 		commandQueue.drainTo(batch, maxSize);
 		return batch;
 	}
@@ -223,7 +223,7 @@ public class DeviceDataBuffer {
 	 *
 	 * @param data 设备数据
 	 */
-	public void offerToRetryData(BaseDataChangeReportDTO data) {
+	public void offerToRetryData(BaseDeviceDataDTO data) {
 		initQueuesIfNeeded();
 		boolean success = retryDataQueue.offer(data);
 		if (!success) {
@@ -240,7 +240,7 @@ public class DeviceDataBuffer {
 	 *
 	 * @param dataList 设备数据列表
 	 */
-	public void offerBatchToRetryData(List<BaseDataChangeReportDTO> dataList) {
+	public void offerBatchToRetryData(List<BaseDeviceDataDTO> dataList) {
 		dataList.forEach(this::offerToRetryData);
 	}
 	
@@ -250,9 +250,9 @@ public class DeviceDataBuffer {
 	 * @param maxSize 最大取出数量
 	 * @return 设备数据列表
 	 */
-	public List<BaseDataChangeReportDTO> drainRetryDataBatch(int maxSize) {
+	public List<BaseDeviceDataDTO> drainRetryDataBatch(int maxSize) {
 		initQueuesIfNeeded();
-		List<BaseDataChangeReportDTO> batch = new ArrayList<>(maxSize);
+		List<BaseDeviceDataDTO> batch = new ArrayList<>(maxSize);
 		retryDataQueue.drainTo(batch, maxSize);
 		return batch;
 	}
@@ -296,7 +296,7 @@ public class DeviceDataBuffer {
 	 *
 	 * @param command 指令响应
 	 */
-	public void offerToRetryCommand(BaseCommandResponseDTO command) {
+	public void offerToRetryCommand(BaseCommandRespDataDTO command) {
 		initQueuesIfNeeded();
 		boolean success = retryCommandQueue.offer(command);
 		if (!success) {
@@ -314,7 +314,7 @@ public class DeviceDataBuffer {
 	 *
 	 * @param commandList 指令响应列表
 	 */
-	public void offerBatchToRetryCommand(List<BaseCommandResponseDTO> commandList) {
+	public void offerBatchToRetryCommand(List<BaseCommandRespDataDTO> commandList) {
 		commandList.forEach(this::offerToRetryCommand);
 	}
 	
@@ -324,9 +324,9 @@ public class DeviceDataBuffer {
 	 * @param maxSize 最大取出数量
 	 * @return 指令响应列表
 	 */
-	public List<BaseCommandResponseDTO> drainRetryCommandBatch(int maxSize) {
+	public List<BaseCommandRespDataDTO> drainRetryCommandBatch(int maxSize) {
 		initQueuesIfNeeded();
-		List<BaseCommandResponseDTO> batch = new ArrayList<>(maxSize);
+		List<BaseCommandRespDataDTO> batch = new ArrayList<>(maxSize);
 		retryCommandQueue.drainTo(batch, maxSize);
 		return batch;
 	}

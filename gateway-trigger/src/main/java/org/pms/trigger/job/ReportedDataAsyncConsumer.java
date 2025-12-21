@@ -2,12 +2,12 @@ package org.pms.trigger.job;
 
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.pms.api.dto.command.CommandResponseDTO;
+import org.pms.api.dto.command.CommandRespDTO;
 import org.pms.api.dto.devicedata.DeviceDataDTO;
-import org.pms.domain.command.dto.BaseCommandResponseDTO;
-import org.pms.domain.dataReport.dto.BaseDataChangeReportDTO;
-import org.pms.trigger.buffer.DeviceDataBuffer;
-import org.pms.trigger.buffer.DeviceBufferConfig;
+import org.pms.domain.command.dto.BaseCommandRespDataDTO;
+import org.pms.domain.devicedata.dto.BaseDeviceDataDTO;
+import org.pms.trigger.buffer.DataBuffer;
+import org.pms.trigger.buffer.DataBufferConfig;
 import org.pms.trigger.converter.DomainToApiConverter;
 import org.pms.trigger.feign.ICommandClient;
 import org.pms.trigger.feign.IDeviceClient;
@@ -23,7 +23,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 设备数据异步消费者
+ * 设备数据上报异步消费者, 包含设备数据和指令响应的消费
  * 定时从本地队列中批量取出数据，通过Feign批量调用后端服务
  * <p>
  * 架构设计：
@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 @EnableScheduling
-public class DeviceDataAsyncConsumer {
+public class ReportedDataAsyncConsumer {
 	
 	/**
 	 * 重试次数记录
@@ -45,15 +45,15 @@ public class DeviceDataAsyncConsumer {
 	 */
 	private final Map<String, Integer> retryCountMap = new HashMap<>();
 	@Resource
-	private DeviceDataBuffer deviceDataBuffer;
+	private DataBuffer dataBuffer;
 	@Resource
-	private IDeviceClient IDeviceClient;
+	private IDeviceClient deviceClient;
 	@Resource
-	private ICommandClient ICommandClient;
+	private ICommandClient commandClient;
 	@Resource
 	private DomainToApiConverter domainToApiConverter;
 	@Resource
-	private DeviceBufferConfig config;
+	private DataBufferConfig config;
 	
 	// ==================== 设备数据消费 ====================
 	
@@ -65,7 +65,7 @@ public class DeviceDataAsyncConsumer {
 	public void consumeDeviceDataBatch() {
 		try {
 			// 1. 批量取出数据（Domain层DTO）
-			List<BaseDataChangeReportDTO> domainBatch = deviceDataBuffer.drainDataBatch(config.getBatchSize());
+			List<BaseDeviceDataDTO> domainBatch = dataBuffer.drainDataBatch(config.getBatchSize());
 			
 			if (domainBatch.isEmpty()) {
 				return;
@@ -87,12 +87,12 @@ public class DeviceDataAsyncConsumer {
 			
 			// 3. 批量调用后端RPC接口
 			try {
-				Response<Boolean> rpcResponse = IDeviceClient.batchSaveDeviceData(apiBatch);
+				Response<Boolean> rpcResponse = deviceClient.batchHandleDeviceData(apiBatch);
 				
 				if (!rpcResponse.getData()) {
-					log.error("批量保存设备数据失败: {}", rpcResponse != null ? rpcResponse.getMessage() : "响应为空");
+					log.error("批量保存设备数据失败: {}", rpcResponse.getMessage());
 					// 失败的数据放入重试队列
-					deviceDataBuffer.offerBatchToRetryData(domainBatch);
+					dataBuffer.offerBatchToRetryData(domainBatch);
 				} else {
 					long end = System.currentTimeMillis();
 					log.info("批量保存设备数据成功，数量: {}, 耗时: {}ms", apiBatch.size(), end - start);
@@ -100,7 +100,7 @@ public class DeviceDataAsyncConsumer {
 			} catch (Exception e) {
 				log.error("批量调用后端服务异常", e);
 				// 异常的数据放入重试队列
-				deviceDataBuffer.offerBatchToRetryData(domainBatch);
+				dataBuffer.offerBatchToRetryData(domainBatch);
 			}
 			
 		} catch (Exception e) {
@@ -116,8 +116,8 @@ public class DeviceDataAsyncConsumer {
 	public void retryFailedDeviceData() {
 		try {
 			// 1. 批量取出重试数据（Domain层DTO）
-			List<BaseDataChangeReportDTO> retryBatch =
-					deviceDataBuffer.drainRetryDataBatch(config.getBatchSize());
+			List<BaseDeviceDataDTO> retryBatch =
+					dataBuffer.drainRetryDataBatch(config.getBatchSize());
 			
 			if (retryBatch.isEmpty()) {
 				return;
@@ -126,7 +126,7 @@ public class DeviceDataAsyncConsumer {
 			log.info("开始重试设备数据，数量: {}", retryBatch.size());
 			
 			// 2. 逐条重试（重试时不批量，避免一条失败影响整批）
-			for (BaseDataChangeReportDTO domainData : retryBatch) {
+			for (BaseDeviceDataDTO domainData : retryBatch) {
 				String deviceId = domainData.getDeviceId();
 				int retryCount = retryCountMap.getOrDefault(deviceId, 0);
 				
@@ -151,20 +151,20 @@ public class DeviceDataAsyncConsumer {
 						continue;
 					}
 					
-					Response<Boolean> rpcResponse = IDeviceClient.saveDeviceData(apiData);
+					Response<Boolean> rpcResponse = deviceClient.handleDeviceData(apiData);
 					
 					if (!rpcResponse.getData()) {
-						log.info("设备数据重试成功: deviceId={}, retryCount={}", deviceId, retryCount + 1);
-						retryCountMap.remove(deviceId);
-					} else {
 						log.warn("设备数据重试失败: deviceId={}, retryCount={}", deviceId, retryCount + 1);
 						retryCountMap.put(deviceId, retryCount + 1);
-						deviceDataBuffer.offerToRetryData(domainData);
+						dataBuffer.offerToRetryData(domainData);
+					} else {
+						log.info("设备数据重试成功: deviceId={}, retryCount={}", deviceId, retryCount + 1);
+						retryCountMap.remove(deviceId);
 					}
 				} catch (Exception e) {
 					log.error("设备数据重试异常: deviceId={}, retryCount={}", deviceId, retryCount + 1, e);
 					retryCountMap.put(deviceId, retryCount + 1);
-					deviceDataBuffer.offerToRetryData(domainData);
+					dataBuffer.offerToRetryData(domainData);
 				}
 			}
 			
@@ -183,8 +183,7 @@ public class DeviceDataAsyncConsumer {
 	public void consumeCommandResponseBatch() {
 		try {
 			// 1. 批量取出数据（Domain层DTO）
-			List<BaseCommandResponseDTO> domainBatch =
-					deviceDataBuffer.drainCommandBatch(config.getBatchSize());
+			List<BaseCommandRespDataDTO> domainBatch = dataBuffer.drainCommandBatch(config.getBatchSize());
 			
 			if (domainBatch.isEmpty()) {
 				return;
@@ -194,10 +193,10 @@ public class DeviceDataAsyncConsumer {
 			long start = System.currentTimeMillis();
 			
 			// 2. 转换为API层DTO
-			List<CommandResponseDTO> apiBatch = domainBatch.stream()
+			List<CommandRespDTO> apiBatch = domainBatch.stream()
 					.map(domainToApiConverter::convertCommandResponse)
-					.filter(java.util.Objects::nonNull)
-					.collect(java.util.stream.Collectors.toList());
+					.filter(Objects::nonNull)
+					.collect(Collectors.toList());
 			
 			if (apiBatch.isEmpty()) {
 				log.warn("转换后的API DTO列表为空，跳过本批次");
@@ -206,12 +205,12 @@ public class DeviceDataAsyncConsumer {
 			
 			// 3. 批量调用后端RPC接口
 			try {
-				Response<Boolean> rpcResponse = IDeviceClient.batchSaveCommandResponse(apiBatch);
+				Response<Boolean> rpcResponse = commandClient.batchHandleCommandResp(apiBatch);
 				
 				if (!rpcResponse.getData()) {
-					log.error("批量保存指令响应失败: {}", rpcResponse != null ? rpcResponse.getMessage() : "响应为空");
+					log.error("批量保存指令响应失败: {}", rpcResponse.getMessage());
 					// 失败的数据放入重试队列
-					deviceDataBuffer.offerBatchToRetryCommand(domainBatch);
+					dataBuffer.offerBatchToRetryCommand(domainBatch);
 				} else {
 					long end = System.currentTimeMillis();
 					log.info("批量保存指令响应成功，数量: {}, 耗时: {}ms", apiBatch.size(), end - start);
@@ -219,7 +218,7 @@ public class DeviceDataAsyncConsumer {
 			} catch (Exception e) {
 				log.error("批量调用后端服务异常", e);
 				// 异常的数据放入重试队列
-				deviceDataBuffer.offerBatchToRetryCommand(domainBatch);
+				dataBuffer.offerBatchToRetryCommand(domainBatch);
 			}
 			
 		} catch (Exception e) {
@@ -235,8 +234,8 @@ public class DeviceDataAsyncConsumer {
 	public void retryFailedCommandResponse() {
 		try {
 			// 1. 批量取出重试数据（Domain层DTO）
-			List<BaseCommandResponseDTO> retryBatch =
-					deviceDataBuffer.drainRetryCommandBatch(500);
+			List<BaseCommandRespDataDTO> retryBatch =
+					dataBuffer.drainRetryCommandBatch(500);
 			
 			if (retryBatch.isEmpty()) {
 				return;
@@ -245,7 +244,7 @@ public class DeviceDataAsyncConsumer {
 			log.info("开始重试指令响应，数量: {}", retryBatch.size());
 			
 			// 2. 逐条重试
-			for (BaseCommandResponseDTO domainCommand : retryBatch) {
+			for (BaseCommandRespDataDTO domainCommand : retryBatch) {
 				String key = domainCommand.getDeviceId() + "_" + domainCommand.getTaskId();
 				int retryCount = retryCountMap.getOrDefault(key, 0);
 				
@@ -262,7 +261,7 @@ public class DeviceDataAsyncConsumer {
 				
 				try {
 					// 转换为API层DTO
-					CommandResponseDTO apiCommand = domainToApiConverter.convertCommandResponse(domainCommand);
+					CommandRespDTO apiCommand = domainToApiConverter.convertCommandResponse(domainCommand);
 					
 					if (apiCommand == null) {
 						log.warn("转换API DTO失败，跳过重试: deviceId={}, taskId={}",
@@ -271,23 +270,20 @@ public class DeviceDataAsyncConsumer {
 						continue;
 					}
 					
-					Response<Boolean> rpcResponse = IDeviceClient.saveCommandResponse(apiCommand);
+					Response<Boolean> rpcResponse = commandClient.handleCommandResp(apiCommand);
 					
 					if (!rpcResponse.getData()) {
-						log.info("指令响应重试成功: deviceId={}, taskId={}, retryCount={}",
-								domainCommand.getDeviceId(), domainCommand.getTaskId(), retryCount + 1);
-						retryCountMap.remove(key);
-					} else {
-						log.warn("指令响应重试失败: deviceId={}, taskId={}, retryCount={}",
-								domainCommand.getDeviceId(), domainCommand.getTaskId(), retryCount + 1);
+						log.warn("指令响应重试失败: deviceId={}, taskId={}, retryCount={}", domainCommand.getDeviceId(), domainCommand.getTaskId(), retryCount + 1);
 						retryCountMap.put(key, retryCount + 1);
-						deviceDataBuffer.offerToRetryCommand(domainCommand);
+						dataBuffer.offerToRetryCommand(domainCommand);
+					} else {
+						log.info("指令响应重试成功: deviceId={}, taskId={}, retryCount={}", domainCommand.getDeviceId(), domainCommand.getTaskId(), retryCount + 1);
+						retryCountMap.remove(key);
 					}
 				} catch (Exception e) {
-					log.error("指令响应重试异常: deviceId={}, taskId={}, retryCount={}",
-							domainCommand.getDeviceId(), domainCommand.getTaskId(), retryCount + 1, e);
+					log.error("指令响应重试异常: deviceId={}, taskId={}, retryCount={}", domainCommand.getDeviceId(), domainCommand.getTaskId(), retryCount + 1, e);
 					retryCountMap.put(key, retryCount + 1);
-					deviceDataBuffer.offerToRetryCommand(domainCommand);
+					dataBuffer.offerToRetryCommand(domainCommand);
 				}
 			}
 			
@@ -307,13 +303,13 @@ public class DeviceDataAsyncConsumer {
 	public void monitorQueueStatus() {
 		try {
 			// 1. 打印队列状态
-			deviceDataBuffer.logQueueStatus();
+			dataBuffer.logQueueStatus();
 			
 			// 2. 打印重试计数器状态
 			log.info("重试计数器状态 - 大小: {}", retryCountMap.size());
 			
 			// 3. 检查告警
-			List<String> alerts = deviceDataBuffer.checkAlerts();
+			List<String> alerts = dataBuffer.checkAlerts();
 			if (!alerts.isEmpty()) {
 				for (String alert : alerts) {
 					log.warn(alert);
@@ -324,7 +320,7 @@ public class DeviceDataAsyncConsumer {
 			}
 			
 			// 4. 获取监控指标（可用于Prometheus等监控系统）
-			DeviceDataBuffer.QueueMetrics metrics = deviceDataBuffer.getMetrics();
+			DataBuffer.QueueMetrics metrics = dataBuffer.getMetrics();
 			
 			// TODO: 监控指标上报 - 可以上报到Prometheus、InfluxDB等监控系统
 			// reportMetrics(metrics);

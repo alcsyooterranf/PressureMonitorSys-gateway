@@ -1,6 +1,5 @@
 package org.pms.trigger.feign;
 
-import org.pms.api.dto.command.CommandResponseDTO;
 import org.pms.api.dto.devicedata.DeviceDataDTO;
 import org.pms.api.facade.IDeviceDataFacade;
 import org.pms.types.Response;
@@ -24,7 +23,7 @@ import java.util.List;
  * @date 2025-01-23
  */
 @FeignClient(
-		name = "business-device-service",
+		name = "business-device-data-service",
 		url = "${rpc.business.url}",
 		configuration = FeignConfig.class
 )
@@ -38,17 +37,7 @@ public interface IDeviceClient extends IDeviceDataFacade {
 	 */
 	@Override
 	@PostMapping("/api/device/data/batch-save")
-	Response<Boolean> batchSaveDeviceData(@RequestBody List<DeviceDataDTO> dataList);
-	
-	/**
-	 * 批量保存指令响应
-	 *
-	 * @param commandList 指令响应列表（API层DTO）
-	 * @return 响应结果
-	 */
-	@Override
-	@PostMapping("/api/device/command/batch-save")
-	Response<Boolean> batchSaveCommandResponse(@RequestBody List<CommandResponseDTO> commandList);
+	Response<Boolean> batchHandleDeviceData(@RequestBody List<DeviceDataDTO> dataList);
 	
 	/**
 	 * 单条保存设备数据（用于重试）
@@ -58,17 +47,7 @@ public interface IDeviceClient extends IDeviceDataFacade {
 	 */
 	@Override
 	@PostMapping("/api/device/data/save")
-	Response<Boolean> saveDeviceData(@RequestBody DeviceDataDTO data);
-	
-	/**
-	 * 单条保存指令响应（用于重试）
-	 *
-	 * @param commandResponse 指令响应数据（API层DTO）
-	 * @return 响应结果
-	 */
-	@Override
-	@PostMapping("/api/device/command/save")
-	Response<Boolean> saveCommandResponse(@RequestBody CommandResponseDTO commandResponse);
+	Response<Boolean> handleDeviceData(@RequestBody DeviceDataDTO data);
 	
 }
 

@@ -20,7 +20,7 @@ import org.springframework.context.annotation.Configuration;
 @Data
 @Configuration
 @ConfigurationProperties(prefix = "device.buffer")
-public class DeviceBufferConfig {
+public class DataBufferConfig {
 
     /**
      * 设备数据队列容量
